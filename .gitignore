@@ -1,0 +1,48 @@
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+.mypy_cache/
+
+# Build and distribution artifacts
+dist/
+build/
+*.egg-info/
+.eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Environment files
+.env
+.env.local
+*.env
+*.env.*
+.env*
+.env.*
+!requirements.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```
