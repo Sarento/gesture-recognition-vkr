@@ -107,18 +107,21 @@ class GestureVisualizer:
         
         return frame
     
-    def draw_fps(self, frame, fps, position=(10, frame.shape[0] - 10)):
+    def draw_fps(self, frame, fps, position=None):
         """
         Отрисовка FPS
         
         Args:
             frame: Кадр изображения
             fps: Значение FPS
-            position: Позиция текста
+            position: Позиция текста (по умолчанию нижний левый угол)
         
         Returns:
             Кадр с FPS
         """
+        if position is None:
+            position = (10, frame.shape[0] - 10)
+            
         x, y = position
         text = f"FPS: {fps:.1f}"
         cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 
