@@ -189,12 +189,12 @@ class HandDetector:
         if finger_index == 0:
             # Проверяем расстояние от большого пальца до указательного
             index_tip = landmarks.landmark[8]
-            distance = np.sqrt((tip.x - index_tip.x)**2 + **(tip.y - index_tip.y)2)
+            distance = np.sqrt((tip.x - index_tip.x)**2 + (tip.y - index_tip.y)**2)
             return distance > 0.1  # Пороговое значение
         else:
             # Проверяем, находится ли кончик пальца дальше от запястья, чем основание
-            tip_distance = np.sqrt((tip.x - wrist.x)**2 + **(tip.y - wrist.y)2)
-            base_distance = np.sqrt((base.x - wrist.x)**2 + **(base.y - wrist.y)2)
+            tip_distance = np.sqrt((tip.x - wrist.x)**2 + (tip.y - wrist.y)**2)
+            base_distance = np.sqrt((base.x - wrist.x)**2 + (base.y - wrist.y)**2)
             
             return tip_distance > base_distance
     

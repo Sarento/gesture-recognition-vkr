@@ -163,8 +163,8 @@ class GestureRecognizer:
                 extended.append(1 if thumb_angle > 30 else 0)
             else:
                 # Проверяем, находится ли кончик дальше от запястья, чем средний сустав
-                tip_dist = np.sqrt((tip.x - wrist.x)**2 + **(tip.y - wrist.y)2)
-                pip_dist = np.sqrt((pip.x - wrist.x)**2 + **(pip.y - wrist.y)2)
+                tip_dist = np.sqrt((tip.x - wrist.x)**2 + (tip.y - wrist.y)**2)
+                pip_dist = np.sqrt((pip.x - wrist.x)**2 + (pip.y - wrist.y)**2)
                 
                 extended.append(1 if tip_dist > pip_dist else 0)
         
@@ -189,7 +189,7 @@ class GestureRecognizer:
         distances = []
         for tip_idx in finger_tips:
             tip = landmarks.landmark[tip_idx]
-            dist = np.sqrt((tip.x - wrist.x)**2 + **(tip.y - wrist.y)2)
+            dist = np.sqrt((tip.x - wrist.x)**2 + (tip.y - wrist.y)**2)
             distances.append(dist)
         
         # Отношения расстояний между соседними пальцами
