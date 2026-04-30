@@ -34,16 +34,39 @@ class RussianSignLanguageRecognizer:
         self.num_hands = num_hands
         self.sequence_length = sequence_length
         
-        # Инициализация MediaPipe Hands
+        # Инициализация MediaPipe Hands с проверкой доступности API
         import mediapipe as mp
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands(
-            static_image_mode=False,
-            max_num_hands=num_hands,
-            min_detection_confidence=min_detection_confidence,
-            min_tracking_confidence=min_tracking_confidence,
-            model_complexity=1
-        )
+        try:
+            # Пробуем новый API (Tasks)
+            from mediapipe.tasks import python
+            from mediapipe.tasks.python import vision
+            
+            base_options = python.BaseOptions(model_asset_path='hand_landmarker.task')
+            options = vision.HandLandmarkerOptions(
+                base_options=base_options,
+                running_mode=vision.RunningMode.LIVE_STREAM,
+                num_hands=num_hands,
+                min_hand_detection_confidence=min_detection_confidence,
+                min_hand_presence_confidence=min_detection_confidence,
+                min_tracking_confidence=min_tracking_confidence
+            )
+            
+            self.hands = vision.HandLandmarker.create_from_options(options)
+            self.use_new_api = True
+            print("Using MediaPipe Tasks API (hand_landmarker.task)")
+        except Exception as e:
+            # Fallback к старому API (solutions)
+            print(f"Note: Using legacy MediaPipe Solutions API ({e})")
+            self.mp_hands = mp.solutions.hands
+            self.hands = self.mp_hands.Hands(
+                static_image_mode=False,
+                max_num_hands=num_hands,
+                min_detection_confidence=min_detection_confidence,
+                min_tracking_confidence=min_tracking_confidence,
+                model_complexity=1
+            )
+            self.use_new_api = False
+            self.mp_draw = mp.solutions.drawing_utils
         
         # База жестов для rule-based распознавания
         self.gesture_database = self._create_rsl_gesture_database()
@@ -217,14 +240,43 @@ class RussianSignLanguageRecognizer:
         }
     
     def detect_hands(self, frame: np.ndarray) -> Tuple[List, List]:
+        """Детектирует руки на кадре с поддержкой обоих API."""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.hands.process(rgb_frame)
-        landmarks_list, handedness_list = [], []
-        if results.multi_hand_landmarks and results.multi_handedness:
-            for hl, hh in zip(results.multi_hand_landmarks, results.multi_handedness):
-                landmarks_list.append(hl)
-                handedness_list.append(hh)
-        return landmarks_list, handedness_list
+        
+        if self.use_new_api:
+            # Новый API (Tasks) - возвращает другой формат результатов
+            try:
+                detection_result = self.hands.detect(rgb_frame)
+                landmarks_list, handedness_list = [], []
+                
+                if detection_result.hand_landmarks:
+                    for idx, hand_landmarks in enumerate(detection_result.hand_landmarks):
+                        # Конвертируем в формат MediaPipe Landmark
+                        from mediapipe.python.solutions.hands import NormalizedLandmark, LandmarkList
+                        converted_landmarks = []
+                        for lm in hand_landmarks:
+                            converted_landmarks.append(NormalizedLandmark(x=lm.x, y=lm.y, z=getattr(lm, 'z', 0)))
+                        
+                        landmark_list_obj = LandmarkList(landmark=converted_landmarks)
+                        landmarks_list.append(landmark_list_obj)
+                        
+                        # Получаем информацию о руке (левая/правая)
+                        handedness = detection_result.handedness[idx]
+                        handedness_list.append(handedness)
+                        
+                return landmarks_list, handedness_list
+            except Exception as e:
+                print(f"Error in new API detection: {e}")
+                return [], []
+        else:
+            # Старый API (Solutions)
+            results = self.hands.process(rgb_frame)
+            landmarks_list, handedness_list = [], []
+            if results.multi_hand_landmarks and results.multi_handedness:
+                for hl, hh in zip(results.multi_hand_landmarks, results.multi_handedness):
+                    landmarks_list.append(hl)
+                    handedness_list.append(hh)
+            return landmarks_list, handedness_list
     
     def _calculate_finger_angles(self, landmarks) -> List[float]:
         angles = []
@@ -417,11 +469,21 @@ class RussianSignLanguageRecognizer:
         if landmarks_list:
             import mediapipe as mp
             mp_draw = mp.solutions.drawing_utils
+            
+            # Определяем HAND_CONNECTIONS в зависимости от API
+            if self.use_new_api:
+                # Для нового API используем перечисление напрямую
+                from mediapipe.python.solutions.hands import HandLandmark
+                connections = [(0,1),(1,2),(2,3),(3,4),(0,5),(5,6),(6,7),(7,8),(0,9),(9,10),(10,11),(11,12),
+                              (0,13),(13,14),(14,15),(15,16),(0,17),(17,18),(18,19),(19,20),(0,17)]
+            else:
+                connections = self.mp_hands.HAND_CONNECTIONS
+                
             for lm in landmarks_list:
                 mp_draw.draw_landmarks(
                     output_frame, 
                     lm, 
-                    self.mp_hands.HAND_CONNECTIONS,
+                    connections,
                     mp_draw.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
                     mp_draw.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2)
                 )
