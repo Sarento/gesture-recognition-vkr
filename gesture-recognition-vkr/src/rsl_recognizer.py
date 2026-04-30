@@ -11,14 +11,13 @@ import time
 
 # Попытка импортировать константы Slovo
 try:
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'slovo_repo'))
-    from constants import LABELS_1000
-    SLOVO_CLASSES = LABELS_1000
-    print(f"[INFO] Загружено {len(SLOVO_CLASSES)} классов жестов из Slovo")
+    from constants import SLOVO_CLASSES, get_class_name
+    print(f"[INFO] Загружено {len(SLOVO_CLASSES)} классов жестов из constants.py")
 except Exception as e:
     # Резервный список, если constants.py не найден
     SLOVO_CLASSES = [f"class_{i}" for i in range(1000)]
+    def get_class_name(idx):
+        return f"class_{idx}"
     print(f"[WARN] Не удалось загрузить классы Slovo: {e}. Используются заглушки.")
 
 
