@@ -63,8 +63,19 @@ def main():
     parser.add_argument(
         '--confidence', 
         type=float, 
-        default=0.6, 
-        help='Минимальная уверенность распознавания (по умолчанию: 0.6)'
+        default=0.5, 
+        help='Минимальная уверенность распознавания (по умолчанию: 0.5)'
+    )
+    parser.add_argument(
+        '--model', 
+        type=str, 
+        default=None, 
+        help='Путь к ONNX модели Slovo (например: models/mvit16-4.onnx)'
+    )
+    parser.add_argument(
+        '--no-slovo', 
+        action='store_true', 
+        help='Отключить использование модели Slovo (только rule-based)'
     )
     
     args = parser.parse_args()
@@ -80,7 +91,9 @@ def main():
         num_hands=args.hands,
         min_detection_confidence=max(0.5, args.confidence),
         min_tracking_confidence=max(0.5, args.confidence),
-        sequence_length=16
+        sequence_length=16,
+        slovo_model_path=args.model,
+        use_slovo=not args.no_slovo
     )
     
     if args.image:
