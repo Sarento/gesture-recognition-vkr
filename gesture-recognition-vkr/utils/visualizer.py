@@ -161,37 +161,76 @@ class GestureVisualizer:
         
         return frame
     
-    def create_info_panel(self, width=300, height=200, gestures_list=None):
+    def draw_sentence(self, frame, sentence: list, position=(10, 120)):
         """
-        Создание информационной панели со списком доступных жестов
+        Отрисовка текущего переведенного предложения
         
         Args:
-            width: Ширина панели
-            height: Высота панели
-            gestures_list: Список названий жестов
+            frame: Кадр изображения
+            sentence: Список распознанных жестов
+            position: Позиция текста
         
         Returns:
-            Изображение информационной панели
+            Кадр с предложением
         """
-        panel = np.zeros((height, width, 3), dtype=np.uint8)
+        x, y = position
         
-        # Заголовок
-        cv2.putText(panel, "Доступные жесты:", (10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+        if not sentence:
+            return frame
         
-        if gestures_list:
-            # Отображение списка жестов
-            y_offset = 60
-            for i, gesture in enumerate(gestures_list[:8]):  # Показываем первые 8
-                cv2.putText(panel, f"- {gesture}", (10, y_offset),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                y_offset += 20
+        # Формирование текста предложения
+        sentence_text = " ".join(sentence[-10:])  # Показываем последние 10 жестов
+        
+        # Фон для текста
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.8
+        thickness = 2
+        
+        (text_width, text_height), _ = cv2.getTextSize(
+            sentence_text, font, font_scale, thickness
+        )
+        
+        # Ограничение ширины текста
+        max_width = frame.shape[1] - 20
+        if text_width > max_width:
+            # Разбивка на несколько строк
+            words = sentence_text.split()
+            lines = []
+            current_line = ""
             
-            if len(gestures_list) > 8:
-                cv2.putText(panel, f"... и еще {len(gestures_list) - 8}", (10, y_offset),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+            for word in words:
+                test_line = current_line + " " + word if current_line else word
+                (test_width, _), _ = cv2.getTextSize(
+                    test_line, font, font_scale, thickness
+                )
+                
+                if test_width <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+            
+            if current_line:
+                lines.append(current_line)
+            
+            # Отрисовка фона
+            total_height = len(lines) * 35
+            cv2.rectangle(frame, (x - 5, y - 25), 
+                         (x + max_width + 5, y + total_height), (0, 0, 0), -1)
+            
+            # Отрисовка строк
+            for i, line in enumerate(lines):
+                cv2.putText(frame, line, (x, y + i * 35), 
+                           font, font_scale, (0, 255, 255), thickness)
+        else:
+            # Отрисовка в одну строку
+            cv2.rectangle(frame, (x - 5, y - 25), 
+                         (x + text_width + 5, y + 10), (0, 0, 0), -1)
+            cv2.putText(frame, f"Предложение: {sentence_text}", (x, y), 
+                       font, font_scale, (0, 255, 255), thickness)
         
-        return panel
+        return frame
     
     def highlight_fingers(self, frame, landmarks, fingers_extended):
         """
