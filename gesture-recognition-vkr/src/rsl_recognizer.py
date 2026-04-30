@@ -249,8 +249,8 @@ class RussianSignLanguageRecognizer:
                 angles = self._calculate_finger_angles(landmarks)
                 extended.append(1 if angles[0] > 30 else 0)
             else:
-                tip_d = np.sqrt((tip.x - wrist.x)**2 + **(tip.y - wrist.y)2)
-                pip_d = np.sqrt((pip.x - wrist.x)**2 + **(pip.y - wrist.y)2)
+                tip_d = np.sqrt((tip.x - wrist.x)**2 + (tip.y - wrist.y)**2)
+                pip_d = np.sqrt((pip.x - wrist.x)**2 + (pip.y - wrist.y)**2)
                 extended.append(1 if tip_d > pip_d else 0)
         return extended
     
